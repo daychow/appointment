@@ -97,7 +97,7 @@ ${JSON.stringify(bookingsData, null, 2)}
 4. 未來預測：[預測]`;
     
     // Call OpenRouter API once
-    const model = 'google/gemma-4-31b-it';
+    const model = 'google/gemini-2.0-flash-001';
     
     console.log('Calling OpenRouter API...');
     
@@ -172,8 +172,16 @@ async function callOpenRouter(apiKey: string, model: string, prompt: string): Pr
   }
   
   const data = await response.json() as any;
-  console.log('OpenRouter response received, content length:', data.choices?.[0]?.message?.content?.length || 0);
-  return data.choices?.[0]?.message?.content || 'No response from AI';
+  console.log('Full response:', JSON.stringify(data, null, 2));
+  
+  const content = data.choices?.[0]?.message?.content;
+  console.log('Content:', content);
+  
+  if (!content || content.trim() === '') {
+    throw new Error('AI returned empty response');
+  }
+  
+  return content;
 }
 
 export { aiRoutes };

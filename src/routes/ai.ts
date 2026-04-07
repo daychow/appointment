@@ -99,7 +99,7 @@ ${JSON.stringify(bookingsData, null, 2)}
 用繁體中文回答，提供 actionable insights，使用 Markdown。`;
     
     // Call OpenRouter API
-    const model = 'minimax/minimax-m2.5:free';
+    const model = 'qwen/qwen3-next-80b-a3b-instruct:free';
     
     console.log('Calling OpenRouter API...');
     

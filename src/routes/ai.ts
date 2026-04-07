@@ -98,7 +98,7 @@ ${JSON.stringify(bookingsData, null, 2)}
 4. 未來預測：[預測]`;
     
     // Call OpenRouter API once
-    const model = 'google/gemma-4-31b-it';
+    const model = 'stepfun/step-3.5-flash:free';
     
     console.log('Calling OpenRouter API...');
     

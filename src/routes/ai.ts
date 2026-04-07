@@ -127,8 +127,8 @@ ${JSON.stringify(bookingsData, null, 2)}
     return c.json({
       success: true,
       id: result.meta.last_row_id,
-      summary: summaryResponse,
-      insights: insightsResponse
+      summary: summary,
+      insights: insights
     });
     
   } catch (error) {

@@ -52,12 +52,17 @@ aiRoutes.post('/analyze', checkPassword, async (c) => {
     }
     
     // Get OpenRouter API key
-    const apiKeyConfig = await c.env.DB.prepare(
-      'SELECT value FROM ai_config WHERE key = ?'
-    ).bind('openrouter_api_key').first();
+    // Priority: 1. Environment variable 2. Database config
+    let apiKey = c.env.OPENROUTER_API_KEY;
     
-    const apiKey = apiKeyConfig?.value || c.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      const apiKeyConfig = await c.env.DB.prepare(
+        'SELECT value FROM ai_config WHERE key = ?'
+      ).bind('openrouter_api_key').first();
+      apiKey = apiKeyConfig?.value;
+    }
     
+    console.log('API Key source:', c.env.OPENROUTER_API_KEY ? 'environment' : (apiKey ? 'database' : 'none'));
     console.log('API Key exists:', !!apiKey);
     
     if (!apiKey) {

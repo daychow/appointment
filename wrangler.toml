@@ -12,3 +12,6 @@ database_id = "2d1a7845-d7ec-4c8a-82c6-99f3f2f6bfc7"
 # 本地開發時使用 .dev.vars 設定環境變數
 [vars]
 ADMIN_PASSWORD_DEFAULT = "admin123"
+
+# AI API Key - 建議在 GitHub Secrets 或 D1 資料庫設定
+# OPENROUTER_API_KEY = "your-api-key-here"

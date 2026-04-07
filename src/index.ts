@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
 import { publicRoutes } from './routes/public';
 import { adminRoutes } from './routes/admin';
+import { aiRoutes } from './routes/ai';
 
 export interface Env {
   DB: D1Database;
+  OPENROUTER_API_KEY?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -24,6 +26,7 @@ app.get('/admin', (c) => {
 // API routes
 app.route('/api', publicRoutes);
 app.route('/api/admin', adminRoutes);
+app.route('/api/admin/ai', aiRoutes);
 
 function getHomePage(): string {
   return `<!DOCTYPE html>
@@ -280,6 +283,15 @@ function getAdminPage(): string {
         </div>
 
         <div id="tab-bookings" class="tab-content active">
+          <!-- AI Analysis Section -->
+          <div class="card" id="ai-section">
+            <h2>AI 智能分析</h2>
+            <div id="ai-content">
+              <p class="empty-state">點擊下方按鈕生成預約摘要和智能分析</p>
+            </div>
+            <button class="btn btn-primary" id="generate-analysis-btn" style="margin-top: 1rem;">生成分析</button>
+          </div>
+          
           <div class="card">
             <h2>所有預約</h2>
             <div id="bookings-list"><p class="empty-state">載入中...</p></div>
@@ -431,6 +443,12 @@ function getAdminPage(): string {
         changePwdBtn.addEventListener('click', changePassword);
       }
       
+      // Generate AI analysis
+      var generateAnalysisBtn = document.getElementById('generate-analysis-btn');
+      if (generateAnalysisBtn) {
+        generateAnalysisBtn.addEventListener('click', generateAnalysis);
+      }
+      
       // Delegate remove range
       document.addEventListener('click', function(e) {
         if (e.target && e.target.classList.contains('remove-range')) {
@@ -464,6 +482,7 @@ function getAdminPage(): string {
       document.getElementById('dashboard').classList.remove('hidden');
       loadBookings();
       loadAvailability();
+      loadAIAnalysis();
     }
     
     function doLogout() {
@@ -482,7 +501,7 @@ function getAdminPage(): string {
       if (activeTab) activeTab.classList.add('active');
       document.getElementById('tab-' + tab).classList.add('active');
       
-      if (tab === 'bookings') loadBookings();
+      if (tab === 'bookings') { loadBookings(); loadAIAnalysis(); }
       if (tab === 'availability') loadAvailability();
     }
     
@@ -570,6 +589,86 @@ function getAdminPage(): string {
         });
         if (response.ok) loadAvailability(); else alert('刪除失敗');
       } catch (error) { alert('刪除失敗'); }
+    }
+    
+    async function loadAIAnalysis() {
+      try {
+        var response = await fetch('/api/admin/ai/analysis', {
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        if (!response.ok) return;
+        var analysis = await response.json();
+        var container = document.getElementById('ai-content');
+        if (analysis && analysis.content) {
+          var data = JSON.parse(analysis.content);
+          var html = '<div style="margin-bottom: 1rem;">';
+          html += '<p style="color: #666; font-size: 0.875rem; margin-bottom: 0.5rem;">生成時間：' + new Date(data.generated_at).toLocaleString('zh-HK') + '</p>';
+          if (data.summary) {
+            html += '<div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">';
+            html += '<h4 style="color: #0369a1; margin-bottom: 0.5rem;">預約摘要</h4>';
+            html += '<div style="white-space: pre-wrap;">' + escapeHtml(data.summary) + '</div>';
+            html += '</div>';
+          }
+          if (data.insights) {
+            html += '<div style="background: #f0fdf4; padding: 1rem; border-radius: 8px;">';
+            html += '<h4 style="color: #166534; margin-bottom: 0.5rem;">智能分析</h4>';
+            html += '<div style="white-space: pre-wrap;">' + escapeHtml(data.insights) + '</div>';
+            html += '</div>';
+          }
+          html += '</div>';
+          container.innerHTML = html;
+        }
+      } catch (error) {
+        // No analysis yet, keep default message
+      }
+    }
+    
+    async function generateAnalysis() {
+      var btn = document.getElementById('generate-analysis-btn');
+      var container = document.getElementById('ai-content');
+      btn.disabled = true;
+      btn.textContent = '分析中...';
+      container.innerHTML = '<p class="empty-state">AI 正在分析數據，請稍候...</p>';
+      
+      try {
+        var response = await fetch('/api/admin/ai/analyze', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + authToken }
+        });
+        var result = await response.json();
+        
+        if (response.ok) {
+          var html = '<div style="margin-bottom: 1rem;">';
+          html += '<p style="color: #666; font-size: 0.875rem; margin-bottom: 0.5rem;">生成時間：' + new Date().toLocaleString('zh-HK') + '</p>';
+          if (result.summary) {
+            html += '<div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">';
+            html += '<h4 style="color: #0369a1; margin-bottom: 0.5rem;">預約摘要</h4>';
+            html += '<div style="white-space: pre-wrap;">' + escapeHtml(result.summary) + '</div>';
+            html += '</div>';
+          }
+          if (result.insights) {
+            html += '<div style="background: #f0fdf4; padding: 1rem; border-radius: 8px;">';
+            html += '<h4 style="color: #166534; margin-bottom: 0.5rem;">智能分析</h4>';
+            html += '<div style="white-space: pre-wrap;">' + escapeHtml(result.insights) + '</div>';
+            html += '</div>';
+          }
+          html += '</div>';
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = '<p class="empty-state" style="color: #e74c3c;">生成失敗：' + (result.error || '未知錯誤') + '</p>';
+        }
+      } catch (error) {
+        container.innerHTML = '<p class="empty-state" style="color: #e74c3c;">生成失敗，請重試</p>';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '生成分析';
+      }
+    }
+    
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
     
     function addExcludeRange() {

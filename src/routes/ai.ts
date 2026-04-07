@@ -33,6 +33,7 @@ aiRoutes.get('/analysis', checkPassword, async (c) => {
 
 // Trigger AI analysis
 aiRoutes.post('/analyze', checkPassword, async (c) => {
+  console.log('AI analyze endpoint called');
   try {
     // Get all bookings data
     const { results: bookings } = await c.env.DB.prepare(
@@ -44,6 +45,8 @@ aiRoutes.post('/analyze', checkPassword, async (c) => {
        LIMIT 100`
     ).all();
     
+    console.log('Found bookings:', bookings?.length || 0);
+    
     if (!bookings || bookings.length === 0) {
       return c.json({ error: 'No booking data to analyze' }, 400);
     }
@@ -54,6 +57,8 @@ aiRoutes.post('/analyze', checkPassword, async (c) => {
     ).bind('openrouter_api_key').first();
     
     const apiKey = apiKeyConfig?.value || c.env.OPENROUTER_API_KEY;
+    
+    console.log('API Key exists:', !!apiKey);
     
     if (!apiKey) {
       return c.json({ error: 'OpenRouter API key not configured' }, 500);
@@ -96,10 +101,14 @@ ${JSON.stringify(bookingsData, null, 2)}
     // Call OpenRouter API
     const model = 'minimax/minimax-m2.5:free';
     
+    console.log('Calling OpenRouter API...');
+    
     const [summaryResponse, insightsResponse] = await Promise.all([
       callOpenRouter(apiKey, model, summaryPrompt),
       callOpenRouter(apiKey, model, insightsPrompt)
     ]);
+    
+    console.log('OpenRouter responses received');
     
     const content = JSON.stringify({
       summary: summaryResponse,
@@ -127,6 +136,8 @@ ${JSON.stringify(bookingsData, null, 2)}
 });
 
 async function callOpenRouter(apiKey: string, model: string, prompt: string): Promise<string> {
+  console.log('Calling OpenRouter with model:', model);
+  
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -145,12 +156,16 @@ async function callOpenRouter(apiKey: string, model: string, prompt: string): Pr
     })
   });
   
+  console.log('OpenRouter response status:', response.status);
+  
   if (!response.ok) {
     const error = await response.text();
+    console.error('OpenRouter error:', error);
     throw new Error(`OpenRouter API error: ${error}`);
   }
   
   const data = await response.json() as any;
+  console.log('OpenRouter response received, content length:', data.choices?.[0]?.message?.content?.length || 0);
   return data.choices?.[0]?.message?.content || 'No response from AI';
 }
 

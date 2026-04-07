@@ -646,11 +646,14 @@ function getAdminPage(): string {
       console.log('Sending request to /api/admin/ai/analyze');
       
       try {
+        console.log('Fetching...');
         var response = await fetch('/api/admin/ai/analyze', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + authToken }
         });
+        console.log('Response received:', response.status);
         var result = await response.json();
+        console.log('Result:', result);
         
         if (response.ok) {
           var html = '<div style="margin-bottom: 1rem;">';
@@ -670,10 +673,12 @@ function getAdminPage(): string {
           html += '</div>';
           container.innerHTML = html;
         } else {
+          console.error('Error response:', result);
           container.innerHTML = '<p class="empty-state" style="color: #e74c3c;">生成失敗：' + (result.error || '未知錯誤') + '</p>';
         }
       } catch (error) {
-        container.innerHTML = '<p class="empty-state" style="color: #e74c3c;">生成失敗，請重試</p>';
+        console.error('Fetch error:', error);
+        container.innerHTML = '<p class="empty-state" style="color: #e74c3c;">生成失敗：' + error.message + '</p>';
       } finally {
         btn.disabled = false;
         btn.textContent = '生成分析';

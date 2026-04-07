@@ -71,48 +71,50 @@ aiRoutes.post('/analyze', checkPassword, async (c) => {
       customer: b.customer_name
     }));
     
-    // Generate summary
-    const summaryPrompt = `你是一個預約管理助手。請根據以下預約數據生成預約摘要：
+    // Single prompt for both summary and insights
+    const combinedPrompt = `你是一個預約管理助手和數據分析專家。請根據以下預約數據，生成預約摘要和智能分析：
 
 預約數據（JSON格式）：
 ${JSON.stringify(bookingsData, null, 2)}
 
-請生成：
-1. 總預約數
-2. 時間分佈（上午/下午/晚上）
-3. 客戶姓名列表
-4. 任何需要注意的事項
+請用繁體中文回答，格式如下：
 
-用繁體中文回答，格式簡潔明瞭，使用 Markdown。`;
+## 預約摘要
+1. 總預約數：[數字]
+2. 時間分佈：[上午/下午/晚上的分佈]
+3. 客戶列表：[姓名]
+4. 注意事項：[如有]
 
-    const insightsPrompt = `你是一個數據分析專家。請分析以下預約數據：
-
-預約數據（JSON格式）：
-${JSON.stringify(bookingsData, null, 2)}
-
-請分析：
-1. 最受歡迎的時段
-2. 客戶偏好（平日 vs 週末，上午 vs 下午）
-3. 時段利用率建議
-4. 未來預測
-
-用繁體中文回答，提供 actionable insights，使用 Markdown。`;
+## 智能分析
+1. 最受歡迎時段：[分析]
+2. 客戶偏好：[平日/週末，上午/下午等]
+3. 時段利用建議：[建議]
+4. 未來預測：[預測]`;
     
-    // Call OpenRouter API
+    // Call OpenRouter API once
     const model = 'qwen/qwen3-next-80b-a3b-instruct:free';
     
     console.log('Calling OpenRouter API...');
     
-    const [summaryResponse, insightsResponse] = await Promise.all([
-      callOpenRouter(apiKey, model, summaryPrompt),
-      callOpenRouter(apiKey, model, insightsPrompt)
-    ]);
+    const aiResponse = await callOpenRouter(apiKey, model, combinedPrompt);
     
-    console.log('OpenRouter responses received');
+    console.log('OpenRouter response received');
+    
+    // Parse response to separate summary and insights
+    let summary = aiResponse;
+    let insights = '';
+    
+    // Try to split by "## 智能分析"
+    const splitMarker = '## 智能分析';
+    const splitIndex = aiResponse.indexOf(splitMarker);
+    if (splitIndex !== -1) {
+      summary = aiResponse.substring(0, splitIndex).trim();
+      insights = aiResponse.substring(splitIndex + splitMarker.length).trim();
+    }
     
     const content = JSON.stringify({
-      summary: summaryResponse,
-      insights: insightsResponse,
+      summary: summary,
+      insights: insights || aiResponse,
       generated_at: new Date().toISOString(),
       data_count: bookings.length
     });

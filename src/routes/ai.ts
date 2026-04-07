@@ -33,7 +33,7 @@ aiRoutes.get('/analysis', checkPassword, async (c) => {
 
 // Trigger AI analysis
 aiRoutes.post('/analyze', checkPassword, async (c) => {
-  console.log('AI analyze endpoint called');
+  console.log('=== AI ANALYZE START ===');
   try {
     // Get all bookings data
     const { results: bookings } = await c.env.DB.prepare(
@@ -45,7 +45,8 @@ aiRoutes.post('/analyze', checkPassword, async (c) => {
        LIMIT 100`
     ).all();
     
-    console.log('Found bookings:', bookings?.length || 0);
+    console.log('Found bookings count:', bookings?.length || 0);
+    console.log('Bookings data:', JSON.stringify(bookings, null, 2));
     
     if (!bookings || bookings.length === 0) {
       return c.json({ error: 'No booking data to analyze' }, 400);
@@ -97,7 +98,7 @@ ${JSON.stringify(bookingsData, null, 2)}
 4. 未來預測：[預測]`;
     
     // Call OpenRouter API once
-    const model = 'google/gemini-2.0-flash-001';
+    const model = 'google/gemma-4-31b-it';
     
     console.log('Calling OpenRouter API...');
     
@@ -143,7 +144,21 @@ ${JSON.stringify(bookingsData, null, 2)}
 });
 
 async function callOpenRouter(apiKey: string, model: string, prompt: string): Promise<string> {
-  console.log('Calling OpenRouter with model:', model);
+  console.log('=== OPENROUTER API CALL ===');
+  console.log('Model:', model);
+  console.log('Prompt length:', prompt.length);
+  console.log('Prompt (first 500 chars):', prompt.substring(0, 500));
+  
+  const requestBody = {
+    model: model,
+    messages: [
+      { role: 'user', content: prompt }
+    ],
+    temperature: 0.7,
+    max_tokens: 2000
+  };
+  
+  console.log('Request body:', JSON.stringify(requestBody, null, 2));
   
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -153,31 +168,32 @@ async function callOpenRouter(apiKey: string, model: string, prompt: string): Pr
       'HTTP-Referer': 'https://appointment-system.workers.dev',
       'X-Title': 'Appointment System AI'
     },
-    body: JSON.stringify({
-      model: model,
-      messages: [
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    })
+    body: JSON.stringify(requestBody)
   });
   
-  console.log('OpenRouter response status:', response.status);
+  console.log('Response status:', response.status);
+  console.log('Response headers:', JSON.stringify(Object.fromEntries(response.headers)));
   
   if (!response.ok) {
-    const error = await response.text();
-    console.error('OpenRouter error:', error);
-    throw new Error(`OpenRouter API error: ${error}`);
+    const errorText = await response.text();
+    console.error('Response error body:', errorText);
+    throw new Error(`OpenRouter API error: ${errorText}`);
   }
   
   const data = await response.json() as any;
+  console.log('=== RESPONSE DATA ===');
   console.log('Full response:', JSON.stringify(data, null, 2));
+  console.log('Choices:', data.choices);
+  console.log('First choice:', data.choices?.[0]);
+  console.log('Message:', data.choices?.[0]?.message);
+  console.log('Content:', data.choices?.[0]?.message?.content);
+  console.log('Content length:', data.choices?.[0]?.message?.content?.length);
+  console.log('=======================');
   
   const content = data.choices?.[0]?.message?.content;
-  console.log('Content:', content);
   
   if (!content || content.trim() === '') {
+    console.error('Empty content received from AI');
     throw new Error('AI returned empty response');
   }
   

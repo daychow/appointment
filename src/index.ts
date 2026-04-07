@@ -446,7 +446,13 @@ function getAdminPage(): string {
       // Generate AI analysis
       var generateAnalysisBtn = document.getElementById('generate-analysis-btn');
       if (generateAnalysisBtn) {
-        generateAnalysisBtn.addEventListener('click', generateAnalysis);
+        console.log('AI analysis button found, attaching event');
+        generateAnalysisBtn.addEventListener('click', function() {
+          console.log('AI button clicked');
+          generateAnalysis();
+        });
+      } else {
+        console.error('AI analysis button not found');
       }
       
       // Delegate remove range
@@ -624,11 +630,20 @@ function getAdminPage(): string {
     }
     
     async function generateAnalysis() {
+      console.log('generateAnalysis called');
       var btn = document.getElementById('generate-analysis-btn');
       var container = document.getElementById('ai-content');
+      
+      if (!btn || !container) {
+        console.error('Button or container not found');
+        return;
+      }
+      
       btn.disabled = true;
       btn.textContent = '分析中...';
       container.innerHTML = '<p class="empty-state">AI 正在分析數據，請稍候...</p>';
+      
+      console.log('Sending request to /api/admin/ai/analyze');
       
       try {
         var response = await fetch('/api/admin/ai/analyze', {

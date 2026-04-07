@@ -1,0 +1,4 @@
+# 本地開發環境變數
+# 複製此檔案為 .dev.vars 並填入你的設定
+
+ADMIN_PASSWORD_DEFAULT=admin123

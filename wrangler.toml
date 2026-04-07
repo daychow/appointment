@@ -1,0 +1,14 @@
+name = "appointment-system"
+main = "src/index.ts"
+compatibility_date = "2026-04-07"
+
+# D1 Database binding (本地開發時會自動創建臨時資料庫)
+[[d1_databases]]
+binding = "DB"
+database_name = "appointment-db"
+# 部署時需要填入你的 database_id:
+# database_id = "your-database-id-here"
+
+# 本地開發時使用 .dev.vars 設定環境變數
+[vars]
+ADMIN_PASSWORD_DEFAULT = "admin123"

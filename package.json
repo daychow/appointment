@@ -1,0 +1,22 @@
+{
+  "name": "appointment-system",
+  "version": "1.0.0",
+  "description": "預約系統 - Cloudflare Workers + D1",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "d1:migrate": "wrangler d1 migrations apply appointment-db",
+    "d1:create": "wrangler d1 create appointment-db"
+  },
+  "keywords": ["appointment", "booking", "cloudflare", "workers"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240402.0",
+    "wrangler": "^3.0.0"
+  }
+}

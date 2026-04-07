@@ -6,12 +6,13 @@ compatibility_date = "2026-04-07"
 [[d1_databases]]
 binding = "DB"
 database_name = "appointment-db"
-# ⚠️ 部署前請填入你的 database_id:
+# 部署前請填入你的 database_id:
 database_id = "2d1a7845-d7ec-4c8a-82c6-99f3f2f6bfc7"
 
 # 本地開發時使用 .dev.vars 設定環境變數
 [vars]
 ADMIN_PASSWORD_DEFAULT = "admin123"
 
-# AI API Key - 建議在 GitHub Secrets 或 D1 資料庫設定
-# OPENROUTER_API_KEY = "your-api-key-here"
+# ⚠️ 注意：OPENROUTER_API_KEY 請在以下地方設定：
+# - 本地開發：.dev.vars 檔案（已被 .gitignore 忽略）
+# - 線上部署：GitHub Secrets > OPENROUTER_API_KEY
